@@ -2,67 +2,89 @@ import time
 
 from src.agents.extractor_agent import ExtractorAgent
 from src.agents.validator_agent import ValidatorAgent
-from src.agents.gst_tds_validator_agent import GSTTDSValidatorAgent
 from src.agents.resolver_agent import ResolverAgent
 from src.agents.reporter_agent import ReporterAgent
 
 
-def run_compliance_pipeline(config):
+def _expand_invoices(extracted):
+    if extracted is None:
+        return []
+    if isinstance(extracted, list):
+        return extracted
+    return [extracted]
+
+
+def _compute_final_confidence(results):
+    if not results:
+        return 1.0
+
+    fail = sum(1 for r in results if r.status == "FAIL")
+    review = sum(1 for r in results if r.status == "REVIEW")
+    total = len(results)
+
+    return max(0.0, 1.0 - ((fail * 0.3 + review * 0.15) / total))
+
+
+def run_compliance_pipeline(config=None):
+    start_time = time.time()
+
     extractor = ExtractorAgent(config)
     validator = ValidatorAgent(config)
-    gst_tds_validator = GSTTDSValidatorAgent(config)
     resolver = ResolverAgent(config)
     reporter = ReporterAgent(config)
 
-    invoices = extractor.load_invoices()
     reports = []
-    start_time = time.time()
+    approved = 0
+    escalated = 0
 
-    for invoice_path in invoices:
+    invoice_files = extractor.load_invoices()
+
+    for file_path in invoice_files:
         try:
-            invoice_ctx = extractor.extract(invoice_path)
+            extracted = extractor.extract(file_path)
+        except Exception as file_error:
+            print(f"[ERROR] File extraction failed: {file_path.name} -> {file_error}")
+            continue
 
-            base_validation = validator.validate(invoice_ctx)
-            gst_tds_validation = gst_tds_validator.validate(invoice_ctx)
+        invoices = _expand_invoices(extracted)
 
-            combined_results = (
-                base_validation["results"]
-                + gst_tds_validation["results"]
-            )
+        for invoice_ctx in invoices:
+            invoice_id = invoice_ctx.get("invoice_id", "MISSING_ID")
 
-            combined_payload = {
-                "results": combined_results,
-                "final_confidence": min(
-                    base_validation["final_confidence"],
-                    gst_tds_validation["final_confidence"]
-                ),
-                "conflicts": (
-                    base_validation["conflicts"]
-                    + gst_tds_validation.get("conflicts", [])
-                ),
-            }
+            try:
+                validation_results = validator.validate(invoice_ctx)
 
-            resolution = resolver.resolve(invoice_ctx, combined_payload)
-            report = reporter.generate(
-                invoice_ctx,
-                combined_payload,
-                resolution
-            )
-            reports.append(report)
+                validation_payload = {
+                    "results": validation_results,
+                    "final_confidence": _compute_final_confidence(validation_results),
+                }
 
-        except Exception as e:
-            reports.append({
-                "invoice_id": getattr(invoice_path, "name", "UNKNOWN"),
-                "decision": "ESCALATE",
-                "confidence": 0.0,
-                "primary_reason": str(e),
-                "escalation_required": True
-            })
+                resolution = resolver.resolve(invoice_ctx, validation_payload)
+
+                report = reporter.generate(
+                    invoice_ctx,
+                    validation_results,
+                    resolution,
+                )
+
+                reports.append(report)
+
+                if report["decision"] == "APPROVE":
+                    approved += 1
+                else:
+                    escalated += 1
+
+            except Exception as invoice_error:
+                print(f"[ERROR] Invoice failed: {invoice_id} -> {invoice_error}")
+                reports.append(
+                    reporter.system_error(invoice_id, str(invoice_error))
+                )
+                escalated += 1
 
     summary = {
         "total_invoices": len(reports),
-        "approved": sum(r["decision"] == "APPROVE" for r in reports),
-        "escalated": sum(r["decision"] != "APPROVE" for r in reports),
+        "approved": approved,
+        "escalated": escalated,
         "processing_time_sec": round(time.time() - start_time, 2),
     }
 

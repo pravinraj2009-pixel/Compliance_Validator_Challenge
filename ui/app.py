@@ -104,6 +104,71 @@ def launch_ui():
             """
         )
 
+        # -------- Tabs (RESTORED) --------
+        # -------------------------------------------------
+        # Tabs (Pages)
+        # -------------------------------------------------
+
+        with gr.Tabs():
+
+            with gr.Tab("Overview"):
+                gr.Markdown(
+                    """
+                    ### 📌 System Overview
+
+                    This system implements an **agentic AI–based Accounts Payable compliance engine**.
+
+                    - Deterministic GST, TDS, and policy validations  
+                    - Human-in-the-loop escalation for ambiguity  
+                    - Explainable, audit-ready decisions  
+
+                    Designed for **accuracy, trust, and scalability**.
+                    """
+                )
+
+            with gr.Tab("Agent Architecture"):
+                gr.Markdown(
+                    """
+                    ### 🧠 Agent Architecture
+
+                    **Extractor Agent**  
+                    Normalizes incoming invoice data (JSON for this assessment)
+
+                    **Validator Agents**  
+                    Perform rule-based GST, TDS, and policy checks
+
+                    **Resolver Agent**  
+                    Handles ambiguity and conflicts  
+                    Uses LLMs only for explanation (not decision-making)
+
+                    **Reporter Agent**  
+                    Produces structured compliance reports
+                    """
+                )
+
+            with gr.Tab("Audit & Traceability"):
+                gr.Markdown(
+                    """
+                    ### 📂 Audit & Traceability
+
+                    - Rule-level outcomes preserved  
+                    - Confidence scores explain decisions  
+                    - Escalation reasons clearly stated  
+                    - Historical decision comparison supported
+                    """
+                )
+
+            with gr.Tab("Documentation"):
+                gr.Markdown(
+                    """
+                    ### 📖 Documentation & Extensibility
+
+                    - JSON-only implementation (per requirements)  
+                    - Designed for PDF/Image extensibility  
+                    - Mock APIs and LLM tools are pluggable  
+                    """
+                )
+
         # -------- Controls --------
         with gr.Row():
             run_btn = gr.Button("🚀 Run Compliance Validation")

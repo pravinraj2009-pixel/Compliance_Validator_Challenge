@@ -20,10 +20,6 @@ class ExtractorAgent:
     - Parse PDF / Image / CSV / JSON
     - Support MULTI-INVOICE JSON files
     - Normalize + enrich each invoice
-    - ALWAYS return List[invoice_ctx]
-
-    HARD CONTRACT:
-    extract(...) -> List[dict]
     """
 
     def __init__(self, config):

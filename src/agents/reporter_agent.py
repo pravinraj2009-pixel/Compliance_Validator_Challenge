@@ -2,6 +2,16 @@ from typing import List
 from src.models.validation_result import ValidationResult
 
 
+# =====================================================
+# User-facing decision labels (presentation only)
+# =====================================================
+DECISION_LABELS = {
+    "APPROVE": "Approved",
+    "APPROVE_WITH_REVIEW": "Approved with Review",
+    "ESCALATE": "Escalated",
+}
+
+
 class ReporterAgent:
     """
     Reporter Agent
@@ -10,7 +20,6 @@ class ReporterAgent:
 
     Guarantees:
     - One report row per invoice
-    - Never crashes
     - Clear escalation logic
     - Deterministic primary reason
     """
@@ -54,20 +63,30 @@ class ReporterAgent:
             confidence = resolution.get("confidence", 0.0)
 
         # -------------------------------
+        # Decision & escalation semantics
+        # -------------------------------
+        raw_decision = resolution.get("decision", "ESCALATE")
+
+        # User-friendly decision label
+        decision = DECISION_LABELS.get(raw_decision, raw_decision)
+
+        # Escalation ONLY for hard failures
+        escalation_required = raw_decision == "ESCALATE"
+
+        # -------------------------------
         # Final report row
         # -------------------------------
         return {
             "invoice_id": invoice_id,
-            "decision": resolution.get("decision", "ESCALATE"),
-            "confidence": round(float(confidence), 3),
+            "decision": decision,
+            "final_confidence": round(float(confidence), 3),
             "primary_reason": primary_reason,
             "failed_checks": [r.check_id for r in failed],
             "review_flags": [r.check_id for r in review],
-            "escalation_required": resolution.get(
-                "escalation_required",
-                resolution.get("decision") != "APPROVE",
-            ),
-            "llm_reasoning": resolution.get("llm_reasoning"),
+            "conflicts": resolution.get("conflicts", []),
+            "escalation_required": escalation_required,
+            "llm_reasoning": resolution.get("llm_resolver")
+            or resolution.get("llm_reasoning"),
         }
 
     # ----------------------------------------------------
@@ -76,11 +95,12 @@ class ReporterAgent:
     def system_error(self, invoice_id: str, error_message: str) -> dict:
         return {
             "invoice_id": invoice_id,
-            "decision": "ESCALATE",
-            "confidence": 0.0,
+            "decision": DECISION_LABELS["ESCALATE"],
+            "final_confidence": 0.0,
             "primary_reason": error_message,
             "failed_checks": ["SYSTEM_ERROR"],
             "review_flags": [],
+            "conflicts": [],
             "escalation_required": True,
             "llm_reasoning": None,
         }

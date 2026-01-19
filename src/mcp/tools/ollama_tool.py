@@ -5,6 +5,8 @@ def ollama_resolver_tool(config):
     agent = LLMResolverAgent(config)
 
     def run(payload):
-        return agent.explain(payload["context"], payload["conflicts"])
+        context = payload.get("invoice_context") or payload.get("context", {})
+        conflicts = payload.get("conflicts", [])
+        return agent.explain(context, conflicts)
 
     return run

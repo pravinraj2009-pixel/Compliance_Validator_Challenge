@@ -12,8 +12,6 @@ class GSTTDSValidatorAgent:
     - Category B: GST Compliance
     - Category D: TDS Compliance
 
-    Uses mock GST Portal API safely.
-    Produces validation evidence + conflict metadata.
     """
 
     def __init__(self, config):
@@ -28,9 +26,7 @@ class GSTTDSValidatorAgent:
             raise TypeError("GSTTDSValidatorAgent expects invoice_ctx dict")
 
         results = []
-        conflicts = []
-        confidence = 1.0
-
+        # Note: Confidence is calculated by pipeline's _compute_final_confidence()
         # ---------------- GSTIN Validation (B1, B2) ----------------
         seller_gstin = invoice_ctx.get("seller_gstin")
 
@@ -48,7 +44,6 @@ class GSTTDSValidatorAgent:
                             evidence=data,
                         )
                     )
-                    confidence -= 0.25
                 elif data.get("status") in ("SUSPENDED", "CANCELLED"):
                     results.append(
                         ValidationResult(
@@ -60,7 +55,6 @@ class GSTTDSValidatorAgent:
                             evidence=data,
                         )
                     )
-                    confidence -= 0.20
             except Exception as e:
                 results.append(
                     ValidationResult(
@@ -71,7 +65,6 @@ class GSTTDSValidatorAgent:
                         confidence_impact=0.10,
                     )
                 )
-                confidence -= 0.10
 
         # ---------------- IRN Validation (B12, B14) ----------------
         irn = invoice_ctx.get("irn")
@@ -89,7 +82,6 @@ class GSTTDSValidatorAgent:
                             evidence=data,
                         )
                     )
-                    confidence -= 0.15
             except Exception as e:
                 results.append(
                     ValidationResult(
@@ -100,7 +92,6 @@ class GSTTDSValidatorAgent:
                         confidence_impact=0.10,
                     )
                 )
-                confidence -= 0.10
 
         # ---------------- HSN Rate Validation (B4, B6) ----------------
         invoice_date = invoice_ctx.get("invoice_date")
@@ -128,7 +119,6 @@ class GSTTDSValidatorAgent:
                             evidence=rate_data,
                         )
                     )
-                    confidence -= 0.10
                 elif applied_igst != expected_igst:
                     results.append(
                         ValidationResult(
@@ -140,7 +130,6 @@ class GSTTDSValidatorAgent:
                             evidence=rate_data,
                         )
                     )
-                    confidence -= 0.10
             except Exception as e:
                 results.append(
                     ValidationResult(
@@ -151,7 +140,6 @@ class GSTTDSValidatorAgent:
                         confidence_impact=0.10,
                     )
                 )
-                confidence -= 0.10
 
         # ---------------- E-Invoice Requirement (B12) ----------------
         try:
@@ -173,7 +161,6 @@ class GSTTDSValidatorAgent:
                         evidence=einv,
                     )
                 )
-                confidence -= 0.15
         except Exception as e:
             results.append(
                 ValidationResult(
@@ -184,7 +171,6 @@ class GSTTDSValidatorAgent:
                     confidence_impact=0.10,
                 )
             )
-            confidence -= 0.10
 
         # ---------------- Section 206AB (D10) ----------------
         pan = invoice_ctx.get("vendor_pan")
@@ -202,7 +188,6 @@ class GSTTDSValidatorAgent:
                             evidence=data,
                         )
                     )
-                    confidence -= 0.10
             except Exception as e:
                 results.append(
                     ValidationResult(
@@ -213,14 +198,13 @@ class GSTTDSValidatorAgent:
                         confidence_impact=0.10,
                     )
                 )
-                confidence -= 0.10
 
         # ---------------- Rule-Based Category B & D ----------------
         for check in CATEGORY_B_CHECKS + CATEGORY_D_CHECKS:
             try:
                 result = check.validate(invoice_ctx)
-                results.append(result)
-                confidence -= result.confidence_impact
+                if isinstance(result, ValidationResult):
+                    results.append(result)
             except Exception as e:
                 results.append(
                     ValidationResult(
@@ -231,18 +215,8 @@ class GSTTDSValidatorAgent:
                         confidence_impact=0.10,
                     )
                 )
-                confidence -= 0.10
 
-        # ---------------- Conflict Detection ----------------
-        failed = [r.check_id for r in results if r.status == "FAIL"]
-        if failed:
-            conflicts.append({
-                "type": "GST_TDS_CONFLICT",
-                "details": failed
-            })
+        # Note: Final confidence is calculated by pipeline's _compute_final_confidence()
+        # based on FAIL/REVIEW status and confidence_impact values in results
 
-        return {
-            "results": results,
-            "final_confidence": round(max(confidence, 0.0), 3),
-            "conflicts": conflicts,
-        }
+        return results

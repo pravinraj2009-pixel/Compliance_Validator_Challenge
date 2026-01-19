@@ -12,8 +12,8 @@ class ResolverAgent:
     - Detect conflicts & ambiguity
     - Apply confidence threshold
     - Detect historical-decision traps
-    - Optionally use LLM for explanation
-    - Decide APPROVE / REVIEW
+    - Use LLM for summarization
+    - Decide APPROVE / APPROVE_WITH_REVIEW / ESCALATE
     - Persist final decision (SQLite)
     """
 
@@ -28,7 +28,7 @@ class ResolverAgent:
         # ---- SQLite audit store ----
         self.db = DecisionStore(config["sqlite"]["db_path"])
 
-        # ---- MCP + LLM (optional) ----
+        # ---- MCP + LLM Call ----
         self.mcp = None
         if (
             config["agentic"]["use_mcp"]
@@ -51,10 +51,6 @@ class ResolverAgent:
         return history
 
     def _detect_conflicts(self, results):
-        """
-        Simple, explainable conflict detection.
-        Can evolve without breaking behavior.
-        """
         conflicts = []
 
         failed = [r for r in results if r.status == "FAIL"]
@@ -65,8 +61,8 @@ class ResolverAgent:
                 "Mixed FAIL and REVIEW outcomes across compliance categories"
             )
 
-        gst_fail = any(r.check_id.startswith("B") for r in failed)
-        tds_fail = any(r.check_id.startswith("D") for r in failed)
+        gst_fail = any(r.category == "GST" for r in failed)
+        tds_fail = any(r.category == "TDS" for r in failed)
 
         if gst_fail and tds_fail:
             conflicts.append(
@@ -94,31 +90,52 @@ class ResolverAgent:
                 if record.get("decision") == "APPROVE" and failed:
                     deviated_from_history = True
 
-        # ---- Base deterministic decision ----
-        if confidence < self.confidence_threshold:
-            decision = "REVIEW"
-            primary_reason = "Low confidence score"
-        elif failed or review_flags:
-            decision = "REVIEW"
-            primary_reason = "Compliance issues detected"
+        # ---- Determine blocking REVIEWs (domain-specific) ----
+        blocking_review = any(
+            r.category == "GST" for r in review_flags
+        )
+
+        # =====================================================
+        # ---- FINAL DECISION LOGIC
+        # =====================================================
+        if failed:
+            decision = "ESCALATE"
+            primary_reason = "One or more critical compliance checks failed"
+
+        elif confidence < self.confidence_threshold:
+            decision = "APPROVE_WITH_REVIEW"
+            primary_reason = "Confidence below approval threshold"
+
+        elif blocking_review:
+            decision = "APPROVE_WITH_REVIEW"
+            primary_reason = "GST compliance requires human review"
+
+        elif deviated_from_history:
+            decision = "APPROVE_WITH_REVIEW"
+            primary_reason = "Deviation from historical approval pattern"
+
         else:
             decision = "APPROVE"
-            primary_reason = "All critical checks passed"
+            primary_reason = "All critical compliance checks passed"
 
-        # ---- Optional LLM resolver (explanation only) ----
+        # ---- LLM resolver 
         llm_explanation = None
         if conflicts and self.mcp:
-            llm_explanation = self.mcp.call_tool(
-                "ollama.reason",
-                {
-                    "invoice_context": {
-                        "invoice_id": invoice_id,
-                        "vendor_gstin": invoice_ctx.get("vendor_gstin"),
-                        "amount": invoice_ctx.get("total_amount"),
-                    },
-                    "conflicts": conflicts,
-                }
-            )
+            try:
+                llm_explanation = self.mcp.call_tool(
+                    "ollama.reason",
+                    {
+                        "invoice_context": {
+                            "invoice_id": invoice_id,
+                            "vendor_gstin": invoice_ctx.get("vendor_gstin"),
+                            "amount": invoice_ctx.get("total_amount"),
+                        },
+                        "conflicts": conflicts,
+                    }
+                )
+            except Exception as llm_error:
+                print(f"[WARNING] LLM resolver failed: {llm_error}")
+                llm_explanation = None
 
         # ---- Persist decision ----
         self.db.log_decision(
@@ -126,7 +143,16 @@ class ResolverAgent:
             decision=decision,
             confidence=confidence
         )
-
+        # ---- DEBUG DECISION SUMMARY ----
+        print(
+            f"[DECISION DEBUG] Invoice={invoice_id} | "
+            f"Decision={decision} | "
+            f"Confidence={confidence} | "
+            f"Failed={len(failed)} | "
+            f"Review={len(review_flags)} | "
+            f"Conflicts={len(conflicts)}"
+        )
+        # ---- FINAL PAYLOAD ----
         return {
             "decision": decision,
             "final_confidence": round(confidence, 3),
@@ -136,5 +162,5 @@ class ResolverAgent:
             "llm_resolver": llm_explanation,
             "deviated_from_history": deviated_from_history,
             "primary_reason": primary_reason,
-            "escalation_required": decision == "REVIEW"
+            "escalation_required": decision == "ESCALATE",
         }

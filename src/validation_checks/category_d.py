@@ -22,6 +22,13 @@ class D3_PANAvailability:
 
     def validate(self, ctx):
         pan = ctx.get("vendor_pan")
+        
+        # Also check nested fields if available
+        if not pan:
+            fields = ctx.get("fields", {})
+            if isinstance(fields, dict):
+                pan = fields.get("vendor_pan")
+        
         if not pan:
             return ValidationResult(
                 self.check_id,

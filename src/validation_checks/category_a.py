@@ -13,7 +13,9 @@ class A1_InvoiceNumberFormat(BaseValidationCheck):
 
 class A2_DuplicateInvoice(BaseValidationCheck):
     check_id="A2"; category="Document"
-    seen=set()
+    def __init__(self):
+        self.seen = set()
+    
     def validate(self, ctx):
         key=(ctx["fields"].get("vendor_gstin"),ctx["fields"].get("invoice_number"))
         if key in self.seen:
@@ -23,7 +25,9 @@ class A2_DuplicateInvoice(BaseValidationCheck):
 
 class A3_SequentialInvoice(BaseValidationCheck):
     check_id="A3"; category="Document"
-    last=None
+    def __init__(self):
+        self.last = None
+    
     def validate(self, ctx):
         inv=ctx["fields"].get("invoice_number")
         if self.last and inv < self.last:

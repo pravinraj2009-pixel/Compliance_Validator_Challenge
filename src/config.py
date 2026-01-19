@@ -62,7 +62,14 @@ def load_config():
     # -------------------------
     # Load company policy YAML
     # -------------------------
-    with open(config["company_policy_path"], "r", encoding="utf-8") as f:
-        config["company_policy"] = yaml.safe_load(f)
+    try:
+        with open(config["company_policy_path"], "r", encoding="utf-8") as f:
+            config["company_policy"] = yaml.safe_load(f) or {}
+    except FileNotFoundError:
+        print(f"Warning: Company policy file not found: {config['company_policy_path']}")
+        config["company_policy"] = {}
+    except yaml.YAMLError as e:
+        print(f"Warning: Could not parse company policy YAML: {e}")
+        config["company_policy"] = {}
 
     return config

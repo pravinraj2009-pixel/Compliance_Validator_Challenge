@@ -53,19 +53,27 @@ def normalize_invoice(raw):
         or raw.get("invoice_date")
     )
 
+    # ---- Handle nested vendor/buyer structures ----
+    vendor = fields.get("vendor") or raw.get("vendor") or {}
+    buyer = fields.get("buyer") or raw.get("buyer") or {}
+    
     seller_gstin = (
         fields.get("seller_gstin")
         or raw.get("seller_gstin")
+        or (vendor.get("gstin") if isinstance(vendor, dict) else None)
     )
 
     buyer_gstin = (
         fields.get("buyer_gstin")
         or raw.get("buyer_gstin")
+        or (buyer.get("gstin") if isinstance(buyer, dict) else None)
     )
 
     invoice_value = (
         fields.get("invoice_value")
         or raw.get("invoice_value")
+        or fields.get("total_amount")
+        or raw.get("total_amount")
         or 0
     )
 

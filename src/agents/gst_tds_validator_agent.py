@@ -9,8 +9,14 @@ class GSTTDSValidatorAgent:
     GST & TDS Validator Agent
     -------------------------
     Executes:
+<<<<<<< HEAD
     - Category B: GST Compliance (FAIL-FAST)
     - Category D: TDS Compliance (only if GST passes)
+=======
+    - Category B: GST Compliance
+    - Category D: TDS Compliance
+
+>>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6
     """
 
     def __init__(self, config):
@@ -25,18 +31,25 @@ class GSTTDSValidatorAgent:
             raise TypeError("GSTTDSValidatorAgent expects invoice_ctx dict")
 
         results = []
+<<<<<<< HEAD
 
         # =====================================================
         # GST VALIDATION (FAIL-FAST)
         # =====================================================
 
+=======
+        # Note: Confidence is calculated by pipeline's _compute_final_confidence()
+>>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6
         # ---------------- GSTIN Validation (B1, B2) ----------------
         seller_gstin = invoice_ctx.get("seller_gstin")
 
         if seller_gstin:
             try:
                 status, data = self.client.validate_gstin(seller_gstin)
+<<<<<<< HEAD
 
+=======
+>>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6
                 if status != 200 or not data.get("valid"):
                     results.append(
                         ValidationResult(
@@ -48,8 +61,11 @@ class GSTTDSValidatorAgent:
                             evidence=data,
                         )
                     )
+<<<<<<< HEAD
                     return results  # 🚨 FAIL-FAST
 
+=======
+>>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6
                 elif data.get("status") in ("SUSPENDED", "CANCELLED"):
                     results.append(
                         ValidationResult(
@@ -61,8 +77,11 @@ class GSTTDSValidatorAgent:
                             evidence=data,
                         )
                     )
+<<<<<<< HEAD
                     return results  # 🚨 FAIL-FAST
 
+=======
+>>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6
             except Exception as e:
                 results.append(
                     ValidationResult(
@@ -73,14 +92,20 @@ class GSTTDSValidatorAgent:
                         confidence_impact=0.10,
                     )
                 )
+<<<<<<< HEAD
                 # REVIEW → continue GST checks
+=======
+>>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6
 
         # ---------------- IRN Validation (B12, B14) ----------------
         irn = invoice_ctx.get("irn")
         if irn:
             try:
                 status, data = self.client.validate_irn(irn)
+<<<<<<< HEAD
 
+=======
+>>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6
                 if status != 200 or not data.get("valid"):
                     results.append(
                         ValidationResult(
@@ -92,8 +117,11 @@ class GSTTDSValidatorAgent:
                             evidence=data,
                         )
                     )
+<<<<<<< HEAD
                     return results  # 🚨 FAIL-FAST
 
+=======
+>>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6
             except Exception as e:
                 results.append(
                     ValidationResult(
@@ -131,7 +159,10 @@ class GSTTDSValidatorAgent:
                             evidence=rate_data,
                         )
                     )
+<<<<<<< HEAD
 
+=======
+>>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6
                 elif applied_igst != expected_igst:
                     results.append(
                         ValidationResult(
@@ -143,8 +174,11 @@ class GSTTDSValidatorAgent:
                             evidence=rate_data,
                         )
                     )
+<<<<<<< HEAD
                     return results  # 🚨 FAIL-FAST
 
+=======
+>>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6
             except Exception as e:
                 results.append(
                     ValidationResult(
@@ -176,8 +210,11 @@ class GSTTDSValidatorAgent:
                         evidence=einv,
                     )
                 )
+<<<<<<< HEAD
                 return results  # 🚨 FAIL-FAST
 
+=======
+>>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6
         except Exception as e:
             results.append(
                 ValidationResult(
@@ -189,9 +226,13 @@ class GSTTDSValidatorAgent:
                 )
             )
 
+<<<<<<< HEAD
         # =====================================================
         # TDS VALIDATION (ONLY IF GST PASSED)
         # =====================================================
+=======
+        # ---------------- Section 206AB (D10) ----------------
+>>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6
         pan = invoice_ctx.get("vendor_pan")
         if pan:
             try:
@@ -235,4 +276,10 @@ class GSTTDSValidatorAgent:
                     )
                 )
 
+<<<<<<< HEAD
+=======
+        # Note: Final confidence is calculated by pipeline's _compute_final_confidence()
+        # based on FAIL/REVIEW status and confidence_impact values in results
+
+>>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6
         return results

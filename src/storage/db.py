@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import sqlite3
 
 def get_conn(path):
@@ -29,4 +30,18 @@ def get_conn(path):
     )
 
     conn.commit()
+=======
+
+import sqlite3
+
+def get_conn(path):
+    conn = sqlite3.connect(path)
+    conn.execute(
+        """CREATE TABLE IF NOT EXISTS decisions (
+            invoice_id TEXT,
+            decision TEXT,
+            confidence REAL
+        )"""
+    )
+>>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6
     return conn

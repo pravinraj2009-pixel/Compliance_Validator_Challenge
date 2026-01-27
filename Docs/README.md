@@ -8,11 +8,7 @@ The system combines:
 - Multi-agent architecture
 - Stateful validation using SQLite
 - External regulatory tools (GST mock API)
-<<<<<<< HEAD
-- LLM-assisted reasoning (GROQ)
-=======
 - LLM-assisted reasoning (Ollama – llama3)
->>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6
 - Human-in-the-loop escalation
 
 ---
@@ -38,11 +34,7 @@ Invoices → Extractor Agent → Validator Agents → Resolver Agent → Reporte
 ### Resolver Agent
 - Handles regulatory conflicts and ambiguity
 - Applies confidence thresholds
-<<<<<<< HEAD
-- Uses LLM (GROQ) only when required
-=======
 - Uses LLM (Ollama llama3) only when required
->>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6
 - Detects deviation from historical decisions
 
 ### Reporter Agent
@@ -57,11 +49,7 @@ Invoices → Extractor Agent → Validator Agents → Resolver Agent → Reporte
 - GST Portal Mock API (5 endpoints)
 - MCP (Model Context Protocol) for tool abstraction
 - SQLite for stateful validation
-<<<<<<< HEAD
-- GROQ for local LLM reasoning
-=======
 - Ollama (llama3) for local LLM reasoning
->>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6
 
 ---
 
@@ -149,12 +137,7 @@ Compliance_Validator_Challenge/
 │   ├── mcp/
 │   │   ├── server.py
 │   │   └── tools/
-<<<<<<< HEAD
-│   │       └── gst_api_tool.py
-|   |       └── groq_api_tool.py
-=======
 │   │       └── ollama_tool.py
->>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6
 │   │
 │   └── config.py
 │
@@ -226,11 +209,7 @@ uv pip install -r requirements.txt
 ```
 ### 7. Start GST Mock Server
 ```bash
-<<<<<<< HEAD
-uv pip install flask
-=======
 pip install flask
->>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6
 python mock_gst_server.py
 ```
 API validation:
@@ -281,11 +260,7 @@ Invoke-RestMethod `
   } `
   -Body '{"pan":"AXXPK5566Q"}'
 
-<<<<<<< HEAD
-### 7. Install Groq dependancies
-=======
 ### 7. Start Ollama (if using LLM features)
->>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6
 
 
 ### 8. Treat the current folder as the import root.
@@ -300,21 +275,6 @@ $env:PYTHONPATH="."
 ```
 ### 10. PDF dependencies
 ```bash
-<<<<<<< HEAD
-uv pip install pdfplumber
-```
-### 11. (OpenCV) installer
-```bash
-uv pip install opencv-python
-uv pip install pytesseract opencv-python
-uv pip install reportlab
-```
-
-
-### 12. Install Dependencies for Groq
-```bash
-UV pip install groq python-dotenv
-=======
 python -m pip install pdfplumber
 ```
 ### 11. (OpenCV) installer
@@ -326,7 +286,6 @@ python -m pip install opencv-python
 ### 12. Start Ollama
 ```bash
 ollama run llama3
->>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6
 ```
 
 ### 13. Run Application

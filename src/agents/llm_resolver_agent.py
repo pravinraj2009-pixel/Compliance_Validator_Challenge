@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import os
 import time
 import requests
@@ -16,16 +17,31 @@ class LLMResolverAgent:
         self.max_retries = config["groq"].get("max_retries", 5)
 
         self.url = "https://api.groq.com/openai/v1/chat/completions"
+=======
+
+import requests
+
+class LLMResolverAgent:
+    def __init__(self, config):
+        self.url = config["ollama"]["base_url"]
+        self.model = config["ollama"]["model"]
+        self.timeout = config["ollama"]["timeout"]
+>>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6
 
     def explain(self, context, conflicts):
         prompt = f"""
 You are a compliance reasoning assistant.
+<<<<<<< HEAD
 
 Instructions:
 - Explain BOTH interpretations neutrally
 - Do NOT decide which is correct
 - Do NOT hallucinate
 - Use only provided data
+=======
+Explain both interpretations neutrally.
+Do NOT make a decision.
+>>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6
 
 Context:
 {context}
@@ -34,6 +50,7 @@ Conflicts:
 {conflicts}
 """
 
+<<<<<<< HEAD
         payload = {
             "model": self.model,
             "messages": [
@@ -83,3 +100,12 @@ Conflicts:
                 time.sleep(wait_time)
 
         raise RuntimeError("Groq API call failed unexpectedly")
+=======
+        r = requests.post(
+            f"{self.url}/api/generate",
+            json={"model": self.model, "prompt": prompt},
+            timeout=self.timeout
+        )
+        r.raise_for_status()
+        return r.json().get("response", "")
+>>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6

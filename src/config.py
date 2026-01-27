@@ -43,12 +43,21 @@ def load_config():
         },
 
         # -------------------------
+<<<<<<< HEAD
         # LLM (GROQ) config
         # -------------------------
         "groq": {
         "model": "llama-3.3-70b-versatile",
         "timeout": 30,
         "max_retries": 5
+=======
+        # LLM (Ollama) config
+        # -------------------------
+        "ollama": {
+            "base_url": "http://localhost:11434",
+            "model": "llama3",
+            "timeout": 60
+>>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6
         },
 
         # -------------------------

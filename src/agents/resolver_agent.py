@@ -1,5 +1,6 @@
 import json
 from src.mcp.server import MCPServer
+<<<<<<< HEAD
 from src.mcp.tools.groq_api_tool import groq_resolver_tool
 from src.storage.decision_store import DecisionStore
 
@@ -31,6 +32,12 @@ def normalize_llm_explanation(text):
     return normalized
 
 
+=======
+from src.mcp.tools.ollama_tool import ollama_resolver_tool
+from src.storage.decision_store import DecisionStore
+
+
+>>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6
 class ResolverAgent:
     """
     Resolver Agent
@@ -55,7 +62,11 @@ class ResolverAgent:
         # ---- SQLite audit store ----
         self.db = DecisionStore(config["sqlite"]["db_path"])
 
+<<<<<<< HEAD
         # ---- MCP + LLM ----
+=======
+        # ---- MCP + LLM Call ----
+>>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6
         self.mcp = None
         if (
             config["agentic"]["use_mcp"]
@@ -63,8 +74,13 @@ class ResolverAgent:
         ):
             self.mcp = MCPServer()
             self.mcp.register_tool(
+<<<<<<< HEAD
                 "groq.reason",
                 groq_resolver_tool(config)
+=======
+                "ollama.reason",
+                ollama_resolver_tool(config)
+>>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6
             )
 
     def _load_history(self):
@@ -77,9 +93,12 @@ class ResolverAgent:
             pass
         return history
 
+<<<<<<< HEAD
     # =====================================================
     # CONFLICT DETECTION (RULE-BASED)
     # =====================================================
+=======
+>>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6
     def _detect_conflicts(self, results):
         conflicts = []
 
@@ -99,6 +118,7 @@ class ResolverAgent:
                 "GST and TDS rules conflict or jointly violated"
             )
 
+<<<<<<< HEAD
         # ✅ NEW: Explicit conflict when GST FAIL occurs
         if gst_fail and not conflicts:
             conflicts.append(
@@ -110,6 +130,10 @@ class ResolverAgent:
     # =====================================================
     # RESOLUTION
     # =====================================================
+=======
+        return conflicts
+
+>>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6
     def resolve(self, invoice_ctx, validation_payload):
         results = validation_payload["results"]
         confidence = validation_payload["final_confidence"]
@@ -129,13 +153,21 @@ class ResolverAgent:
                 if record.get("decision") == "APPROVE" and failed:
                     deviated_from_history = True
 
+<<<<<<< HEAD
         # ---- Determine blocking REVIEWs ----
+=======
+        # ---- Determine blocking REVIEWs (domain-specific) ----
+>>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6
         blocking_review = any(
             r.category == "GST" for r in review_flags
         )
 
         # =====================================================
+<<<<<<< HEAD
         # FINAL DECISION LOGIC
+=======
+        # ---- FINAL DECISION LOGIC
+>>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6
         # =====================================================
         if failed:
             decision = "ESCALATE"
@@ -157,6 +189,7 @@ class ResolverAgent:
             decision = "APPROVE"
             primary_reason = "All critical compliance checks passed"
 
+<<<<<<< HEAD
         # =====================================================
         # LLM RESOLVER (AI SUMMARY)
         # =====================================================
@@ -167,6 +200,14 @@ class ResolverAgent:
             try:
                 raw_llm_output = self.mcp.call_tool(
                     "groq.reason",
+=======
+        # ---- LLM resolver 
+        llm_explanation = None
+        if conflicts and self.mcp:
+            try:
+                llm_explanation = self.mcp.call_tool(
+                    "ollama.reason",
+>>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6
                     {
                         "invoice_context": {
                             "invoice_id": invoice_id,
@@ -176,13 +217,17 @@ class ResolverAgent:
                         "conflicts": conflicts,
                     }
                 )
+<<<<<<< HEAD
 
                 llm_explanation = normalize_llm_explanation(raw_llm_output)
 
+=======
+>>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6
             except Exception as llm_error:
                 print(f"[WARNING] LLM resolver failed: {llm_error}")
                 llm_explanation = None
 
+<<<<<<< HEAD
         # =====================================================
         # UI SAFETY FIXES
         # =====================================================
@@ -197,14 +242,20 @@ class ResolverAgent:
                 )()
             ]
 
+=======
+>>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6
         # ---- Persist decision ----
         self.db.log_decision(
             invoice_id=invoice_id,
             decision=decision,
             confidence=confidence
         )
+<<<<<<< HEAD
 
         # ---- DEBUG ----
+=======
+        # ---- DEBUG DECISION SUMMARY ----
+>>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6
         print(
             f"[DECISION DEBUG] Invoice={invoice_id} | "
             f"Decision={decision} | "
@@ -213,18 +264,31 @@ class ResolverAgent:
             f"Review={len(review_flags)} | "
             f"Conflicts={len(conflicts)}"
         )
+<<<<<<< HEAD
 
         # =====================================================
         # FINAL PAYLOAD
         # =====================================================
+=======
+        # ---- FINAL PAYLOAD ----
+>>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6
         return {
             "decision": decision,
             "final_confidence": round(confidence, 3),
             "failed_checks": [r.check_id for r in failed],
             "review_flags": [r.check_id for r in review_flags],
+<<<<<<< HEAD
             "conflicts": conflicts,                 # rule-based (table)
             "llm_reasoning": llm_explanation,        # AI summary
             "deviated_from_history": deviated_from_history,
             "primary_reason": primary_reason,
             "escalation_required": decision == "ESCALATE",
         }
+=======
+            "conflicts": conflicts,
+            "llm_resolver": llm_explanation,
+            "deviated_from_history": deviated_from_history,
+            "primary_reason": primary_reason,
+            "escalation_required": decision == "ESCALATE",
+        }
+>>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6

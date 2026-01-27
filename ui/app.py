@@ -50,7 +50,11 @@ VALIDATION_TEXT_MAP = {
     "B12": "E-invoice required but IRN missing",
     "B15": "E-invoice required but IRN missing",
     "D1": "TDS applicability needs confirmation",
+<<<<<<< HEAD
     "D3": "PAN not available - higher TDS applicable",
+=======
+    "D3": "PAN not available – higher TDS applicable",
+>>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6
     "D5": "TDS threshold validation passed",
     "D7": "TDS on GST component handled correctly",
     "D9": "TAN not configured",
@@ -67,6 +71,7 @@ def resolve_validation_text(code: str) -> str:
         f"Validation rule {code} failed"
     )
 
+<<<<<<< HEAD
 def aggregate_ai_summary(llm_reasoning_list):   
     """
     Convert per-invoice LLM reasoning into
@@ -103,6 +108,12 @@ def aggregate_ai_summary(llm_reasoning_list):
     # =========================================================
     # PIPELINE EXECUTION + NORMALIZATION
     # =========================================================
+=======
+
+# =========================================================
+# PIPELINE EXECUTION + NORMALIZATION
+# =========================================================
+>>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6
 
 def run_pipeline(show_only_escalated: bool):
     """
@@ -116,7 +127,11 @@ def run_pipeline(show_only_escalated: bool):
     config = load_config()
 
     # -----------------------------------------------------
+<<<<<<< HEAD
     # Run compliance pipeline (core engine)
+=======
+    # Run pipeline
+>>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6
     # -----------------------------------------------------
     summary, reports = run_compliance_pipeline(
         config,
@@ -128,12 +143,16 @@ def run_pipeline(show_only_escalated: bool):
     # -----------------------------------------------------
     rows = []
     escalation_count = 0
+<<<<<<< HEAD
 
     # Collect ALL LLM reasoning across invoices
     all_llm_reasoning = []
 
     # Collect rule-based conflicts (per invoice)
     conflicts = []
+=======
+    llm_reasoning = []
+>>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6
 
     # -----------------------------------------------------
     # Process each invoice report
@@ -141,6 +160,7 @@ def run_pipeline(show_only_escalated: bool):
     for r in reports:
 
         is_escalated = bool(r.get("escalation_required"))
+<<<<<<< HEAD
         if is_escalated:
             escalation_count += 1
 
@@ -157,6 +177,22 @@ def run_pipeline(show_only_escalated: bool):
         elif "review" in decision:
             rationale = "Approved with non-blocking compliance ambiguity"
         elif decision_lower == "approved":
+=======
+
+        if is_escalated:
+            escalation_count += 1
+
+        decision = r.get("decision", "")
+
+        # -------------------------------------------------
+        # Decision rationale
+        # -------------------------------------------------
+        if decision == "ESCALATE":
+            rationale = "One or more critical compliance failures detected"
+        elif decision == "APPROVE_WITH_REVIEW":
+            rationale = "Approved with non-blocking compliance ambiguity"
+        elif decision == "APPROVE":
+>>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6
             rationale = "All compliance checks passed"
         else:
             rationale = "Decision pending review"
@@ -164,6 +200,7 @@ def run_pipeline(show_only_escalated: bool):
         # -------------------------------------------------
         # SAFE LIST HANDLING
         # -------------------------------------------------
+<<<<<<< HEAD
             if r.get("escalation_required") and not review_flags:
                 review_flags = [
                     "Escalated due to critical GST compliance failure"
@@ -178,6 +215,11 @@ def run_pipeline(show_only_escalated: bool):
         # -------------------------------------------------
         if r.get("llm_reasoning"):
             all_llm_reasoning.append(r["llm_reasoning"])
+=======
+        failed_checks = r.get("failed_checks") or []
+        review_flags = r.get("review_flags") or []
+        conflicts = r.get("conflicts") or []
+>>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6
 
         # -------------------------------------------------
         # Build table row
@@ -198,12 +240,29 @@ def run_pipeline(show_only_escalated: bool):
                 for code in failed_checks
             ),
             "review_flags": "\n".join(
+<<<<<<< HEAD
                 resolve_validation_text(code) if code.isupper() else code
                 for code in review_flags
             ),
             "conflicts": "\n".join(invoice_conflicts),
         })
 
+=======
+                resolve_validation_text(code)
+                for code in review_flags
+            ),
+            "conflicts": "\n".join(conflicts),
+        })
+
+    # -------------------------------------------------
+    # Capture FIRST escalation explanation
+    # -------------------------------------------------
+    for r in reports:
+        if r.get("escalation_required") and r.get("conflicts"):
+            llm_reasoning = r.get("conflicts") or []
+            break
+
+>>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6
     # -----------------------------------------------------
     # Create DataFrame
     # -----------------------------------------------------
@@ -217,11 +276,16 @@ def run_pipeline(show_only_escalated: bool):
         df = df[df["Escalation\nRequired"] == "Yes"]
 
     # -----------------------------------------------------
+<<<<<<< HEAD
     # Summary text
+=======
+    # Summary calculations
+>>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6
     # -----------------------------------------------------
     approved = len(reports) - escalation_count
 
     summary_text = f"""
+<<<<<<< HEAD
     **Total Invoices:** {len(reports)}  
     **Approved Invoices:** {approved}  
     **Escalated Invoices:** {escalation_count}  
@@ -260,6 +324,26 @@ def run_pipeline(show_only_escalated: bool):
         "",                    # escalation message (unchanged)
         conflicts,             # rule-based conflicts
         ai_compliance_summary  # ✅ AI Compliance Summary
+=======
+**Total Invoices:** {len(reports)}  
+**Approved Invoices:** {approved}  
+**Escalated Invoices:** {escalation_count}  
+**Processing Time (seconds):** {summary.get("processing_time_sec")}
+"""
+
+    escalation_msg = (
+        "There are 0 escalated invoices."
+        if escalation_count == 0
+        else ""
+    )
+
+    return (
+        summary_text,
+        df,
+        escalation_count,
+        escalation_msg,
+        llm_reasoning
+>>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6
     )
 
 
@@ -286,6 +370,7 @@ def launch_ui():
                     </div>
                 </div>
                 <div class="nav-links">
+<<<<<<< HEAD
                     <a href="https://docs.google.com/document/d/1WK0BGHVOBgTPo0uH_4OpeGNKTMAxGEAd/edit?usp=sharing&ouid=106462723989474464636&rtpof=true&sd=true"
                     target="_blank">Architecture</a>
 
@@ -293,6 +378,15 @@ def launch_ui():
                     target="_blank">Walkthrough</a>
 
                     <a href="https://drive.google.com/file/d/1AIbu1FbB24K__khOVbzM2CmzoLUrSHuh/view?usp=sharing"
+=======
+                    <a href="/file=text/Compliance%20Validator%20System%20Architecture%20Document.docx"
+                    target="_blank">Architecture</a>
+
+                    <a href="/file=docs/Compliance%20Validator%20System_Dry_Run_Walkthrough.docx"
+                    target="_blank">Walkthrough</a>
+
+                    <a href="/file=README.md"
+>>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6
                     target="_blank">README</a>
                 </div>
 
@@ -416,6 +510,7 @@ def launch_ui():
                 gr.update(visible=False),
             )
 
+<<<<<<< HEAD
             summary_text, df, esc_count, esc_msg, conflicts, ai_compliance_summary = (
                 run_pipeline(show_only_escalated)
             )
@@ -425,10 +520,19 @@ def launch_ui():
             # ---- Rule-based conflicts (per invoice / table context) ----
             conflicts_md = (
                 "### Conflicts Identified\n\n"
+=======
+            summary_text, df, esc_count, esc_msg, conflicts = run_pipeline(show_only_escalated)
+
+            has_rows = len(df) > 0
+
+            conflicts_md = (
+                "### Compliance Summary using AI\n\n"
+>>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6
                 + "\n".join(f"- {c}" for c in conflicts)
                 if conflicts else ""
             )
 
+<<<<<<< HEAD
             # ---- LLM-based AI summary (global, aggregated) ----
             ai_md = (
                 "### Compliance Summary using AI\n\n"
@@ -437,16 +541,25 @@ def launch_ui():
             )
 
 
+=======
+>>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6
             yield (
                 gr.update(value=summary_text, visible=True),
                 gr.update(value=esc_msg, visible=esc_count == 0),
                 gr.update(value=df, visible=has_rows),
                 gr.update(value=conflicts_md, visible=bool(conflicts_md)),
+<<<<<<< HEAD
                 gr.update(value=ai_md, visible=bool(ai_md)),
                 gr.update(visible=has_rows),
             )
 
 
+=======
+                gr.update(visible=has_rows),
+                gr.update(visible=has_rows),
+            )
+
+>>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6
         # -------------------------------------------------
         # WIRING
         # -------------------------------------------------

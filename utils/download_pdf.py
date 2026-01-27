@@ -1,5 +1,6 @@
 import tempfile
 import os
+<<<<<<< HEAD
 from datetime import datetime
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.platypus import (
@@ -7,19 +8,30 @@ from reportlab.platypus import (
     Paragraph, Spacer
 )
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+=======
+from reportlab.lib.pagesizes import A4
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
+from reportlab.lib.styles import getSampleStyleSheet
+>>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6
 from reportlab.lib import colors
 
 
 def generate_pdf(df):
     """
+<<<<<<< HEAD
     Generates a clean, readable PDF report
     with no truncation or indentation issues.
+=======
+    Generates a professional PDF report directly
+    from the UI DataFrame.
+>>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6
     """
 
     if df is None or df.empty:
         return None
 
     temp_dir = tempfile.mkdtemp()
+<<<<<<< HEAD
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     file_path = os.path.join(
         temp_dir, f"compliance_report_{timestamp}.pdf"
@@ -35,11 +47,21 @@ def generate_pdf(df):
         pagesize=pagesize,
         rightMargin=20,
         leftMargin=20,
+=======
+    file_path = os.path.join(temp_dir, "compliance_report.pdf")
+
+    doc = SimpleDocTemplate(
+        file_path,
+        pagesize=A4,
+        rightMargin=24,
+        leftMargin=24,
+>>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6
         topMargin=24,
         bottomMargin=24,
     )
 
     styles = getSampleStyleSheet()
+<<<<<<< HEAD
 
     cell_style = ParagraphStyle(
         "CellStyle",
@@ -63,6 +85,8 @@ def generate_pdf(df):
         spaceAfter=4,
     )
 
+=======
+>>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6
     elements = []
 
     # -------------------------------------------------
@@ -74,6 +98,7 @@ def generate_pdf(df):
             styles["Title"]
         )
     )
+<<<<<<< HEAD
     elements.append(Spacer(1, 10))
 
     # -------------------------------------------------
@@ -89,6 +114,10 @@ def generate_pdf(df):
         )
     )
     elements.append(Spacer(1, 12))
+=======
+
+    elements.append(Paragraph("<br/>", styles["Normal"]))
+>>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6
 
     # -------------------------------------------------
     # Prepare table data
@@ -96,6 +125,7 @@ def generate_pdf(df):
     table_data = []
 
     # Header row
+<<<<<<< HEAD
     table_data.append([
         Paragraph(str(col), header_style) for col in df.columns
     ])
@@ -135,6 +165,25 @@ def generate_pdf(df):
         colWidths=col_widths,
         repeatRows=1,
         hAlign="LEFT",
+=======
+    table_data.append(list(df.columns))
+
+    # Data rows (wrap text)
+    for _, row in df.iterrows():
+        wrapped_row = []
+        for cell in row:
+            text = "" if cell is None else str(cell).replace("\n", "<br/>")
+            wrapped_row.append(Paragraph(text, styles["Normal"]))
+        table_data.append(wrapped_row)
+
+    # -------------------------------------------------
+    # Build table
+    # -------------------------------------------------
+    table = Table(
+        table_data,
+        repeatRows=1,
+        colWidths=[70] * len(df.columns)
+>>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6
     )
 
     table.setStyle(
@@ -142,11 +191,20 @@ def generate_pdf(df):
             ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
             ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
             ("VALIGN", (0, 0), (-1, -1), "TOP"),
+<<<<<<< HEAD
             ("LEFTPADDING", (0, 0), (-1, -1), 4),
             ("RIGHTPADDING", (0, 0), (-1, -1), 4),
             ("TOPPADDING", (0, 0), (-1, -1), 4),
             ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
             ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+=======
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTSIZE", (0, 0), (-1, -1), 8),
+            ("LEFTPADDING", (0, 0), (-1, -1), 6),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+            ("TOPPADDING", (0, 0), (-1, -1), 6),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+>>>>>>> 507c4561faf35b246d6d8207ac15a538e2aa91a6
         ])
     )
 
